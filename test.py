@@ -29,7 +29,34 @@ class ControladorPID:
         self.Kd = Kd
 
     def generar_respuestas(self):
-        pass
+        """Genera las respuestas del sistema con diferentes controladores."""
+        # Definición del sistema abierto
+        num = [1]
+        den = [self.M * self.l, 0, -(self.M + self.m) * self.g]
+        sys_open = ctrl.TransferFunction(num, den)
+
+        # Controladores
+        sys_p = self.Kp
+        sys_pi = self.Kp + self.Ki / ctrl.TransferFunction([1], [1, 0])
+        sys_pd = self.Kp + self.Kd * ctrl.TransferFunction([1, 0], [1])
+        sys_pid = self.Kp + self.Ki / ctrl.TransferFunction([1], [1, 0]) + self.Kd * ctrl.TransferFunction([1, 0], [1])
+
+        # Sistemas cerrados
+        sys_p_closed = ctrl.feedback(sys_p * sys_open)
+        sys_pi_closed = ctrl.feedback(sys_pi * sys_open)
+        sys_pd_closed = ctrl.feedback(sys_pd * sys_open)
+        sys_pid_closed = ctrl.feedback(sys_pid * sys_open)
+
+        # Tiempo de simulación
+        t = np.linspace(0, 10, 1000)
+
+        # Respuestas al escalón
+        _, y_p = ctrl.step_response(sys_p_closed, t)
+        _, y_pi = ctrl.step_response(sys_pi_closed, t)
+        _, y_pd = ctrl.step_response(sys_pd_closed, t)
+        _, y_pid = ctrl.step_response(sys_pid_closed, t)
+
+        return t, [y_p, y_pi, y_pd, y_pid]
 
 
 class InterfazGrafica:

@@ -1,55 +1,62 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from control import tf, step_response, feedback
+import control as ctrl
 
-# Parámetros del sistema 
-M = 0.5  # Masa del carro (kg)
-m = 0.2  # Masa del péndulo (kg)
-l = 1.0  # Longitud de la varilla (m)
-g = 9.81  # Gravedad (m/s^2)
+# Definición de los parámetros del sistema (pendulo invertido)
+M = 1.0  # masa del carro (kg)
+m = 0.1  # masa del péndulo (kg)
+l = 1.0  # longitud del péndulo (m)
+g = 9.81  # aceleración de la gravedad (m/s^2)
 
-# Función de transferencia 
+# Función de transferencia sin controlador
+num = [1]
+den = [M*l, 0, -(M+m)*g]
+sys_open = ctrl.TransferFunction(num, den)
 
-numerator = [m * l]
-denominator = [M + m, 0, -m * g * l]
-
-# Sistema sin control
-pendulum = tf(numerator, denominator)
-
-
+# Ganancias de los controladores PID
 Kp = 10  # Ganancia proporcional
-P_controller = Kp
-controlled_p = feedback(P_controller * pendulum, 1)  # Realimentación unitaria
+Ki = 1   # Ganancia integral
+Kd = 5   # Ganancia derivativa
 
-time = np.linspace(0, 5, 500)  # Tiempo de simulación
-response_p, time_p = step_response(controlled_p, time)
+# Controlador P: solo un término proporcional
+sys_p = Kp
 
-# Controlador PI
-Ki = 1
-PI_controller = Kp + Ki / tf([1, 0], [1])  # Controlador PI
-controlled_pi = feedback(PI_controller * pendulum, 1)
-response_pi, time_pi = step_response(controlled_pi, time)
+# Controlador PI: Kp + Ki/s
+sys_pi = Kp + Ki / ctrl.TransferFunction([1], [1, 0])
 
-# Controlador PD
-Kd = 1
-PD_controller = Kp + Kd * tf([1, 0], [1])  # Controlador PD
-controlled_pd = feedback(PD_controller * pendulum, 1)
-response_pd, time_pd = step_response(controlled_pd, time)
+# Controlador PD: Kp + Kd*s
+sys_pd = Kp + Kd * ctrl.TransferFunction([1, 0], [1])
 
-# Controlador PID
-PID_controller = Kp + Ki / tf([1, 0], [1]) + Kd * tf([1, 0], [1])  # Controlador PID
-controlled_pid = feedback(PID_controller * pendulum, 1)
-response_pid, time_pid = step_response(controlled_pid, time)
+# Controlador PID: Kp + Ki/s + Kd*s
+sys_pid = Kp + Ki / ctrl.TransferFunction([1], [1, 0]) + Kd * ctrl.TransferFunction([1, 0], [1])
 
-# Gráficos de respuesta
-plt.figure(figsize=(12, 8))
-plt.plot(time_p, response_p, label="Controlador P")
-plt.plot(time_pi, response_pi, label="Controlador PI")
-plt.plot(time_pd, response_pd, label="Controlador PD")
-plt.plot(time_pid, response_pid, label="Controlador PID")
-plt.title("Respuesta del sistema con diferentes controladores")
-plt.xlabel("Tiempo (s)")
-plt.ylabel("Salida (posición del carro o ángulo)")
-plt.legend()
-plt.grid()
+# Sistemas cerrados con controladores
+sys_p_closed = ctrl.feedback(sys_p * sys_open)
+sys_pi_closed = ctrl.feedback(sys_pi * sys_open)
+sys_pd_closed = ctrl.feedback(sys_pd * sys_open)
+sys_pid_closed = ctrl.feedback(sys_pid * sys_open)
+
+# Tiempo de simulación
+t = np.linspace(0, 10, 1000)
+
+# Respuesta al escalón para cada controlador
+t, y_p = ctrl.step_response(sys_p_closed, t)
+t, y_pi = ctrl.step_response(sys_pi_closed, t)
+t, y_pd = ctrl.step_response(sys_pd_closed, t)
+t, y_pid = ctrl.step_response(sys_pid_closed, t)
+
+# Graficar las respuestas
+plt.figure(figsize=(10, 6))
+
+plt.plot(t, y_p, label="Controlador P", linestyle='--')
+plt.plot(t, y_pi, label="Controlador PI", linestyle='-.')
+plt.plot(t, y_pd, label="Controlador PD", linestyle=':')
+plt.plot(t, y_pid, label="Controlador PID", linewidth=2)
+
+plt.title("Respuestas al escalón del sistema con diferentes controladores")
+plt.xlabel("Tiempo [s]")
+plt.ylabel("Ángulo del péndulo (θ)")
+plt.legend(loc="best")
+plt.grid(True)
 plt.show()
+

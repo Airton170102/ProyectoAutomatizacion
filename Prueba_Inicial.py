@@ -13,10 +13,10 @@ num = [1]
 den = [M*l, 0, -(M+m)*g]
 sys_open = ctrl.TransferFunction(num, den)
 
-# Ganancias de los controladores PID
-Kp = 10  # Ganancia proporcional
+# Ganancias de los controladores PID 
+Kp = 50  # Ganancia proporcional
 Ki = 1   # Ganancia integral
-Kd = 5   # Ganancia derivativa
+Kd = 10  # Ganancia derivativa
 
 # Controlador P: solo un término proporcional
 sys_p = Kp
@@ -59,4 +59,3 @@ plt.ylabel("Ángulo del péndulo (θ)")
 plt.legend(loc="best")
 plt.grid(True)
 plt.show()
-

@@ -112,7 +112,38 @@ class InterfazGrafica:
             self.sliders[text] = slider
 
     def actualizar_graficas(self):
-        pass
+        """Actualiza las gráficas basadas en los valores actuales de los sliders."""
+        # Obtener valores de los sliders
+        M = self.sliders["Masa del carro (M)"].get()
+        m = self.sliders["Masa del péndulo (m)"].get()
+        l = self.sliders["Longitud del péndulo (l)"].get()
+        g = self.sliders["Gravedad (g)"].get()
+        Kp = self.sliders["Ganancia proporcional (Kp)"].get()
+        Ki = self.sliders["Ganancia integral (Ki)"].get()
+        Kd = self.sliders["Ganancia derivativa (Kd)"].get()
+        
+        # Actualizar los parámetros en el controlador
+        self.controlador.actualizar_parametros(M, m, l, g, Kp, Ki, Kd)
+        
+        # Generar las respuestas del sistema
+        t, respuestas = self.controlador.generar_respuestas()
+        
+        # Actualizar las gráficas
+        titulos = ["P", "PI", "PD", "PID"]
+        for ax, y, title in zip(self.axes, respuestas, titulos):
+            ax.clear()
+            ax.plot(t, y, linewidth=2)
+            ax.set_title(f"Controlador {title}")
+            ax.set_xlabel("Tiempo [s]")
+            ax.set_ylabel("Ángulo del péndulo (θ)")
+            ax.grid(True)
+        
+        self.canvas.draw()
+
+    def ejecutar(self):
+        """Ejecuta el bucle principal de la interfaz gráfica."""
+        self.ventana.mainloop()
+
 
 # Crear la instancia del controlador PID
 controlador = ControladorPID()

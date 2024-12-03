@@ -27,16 +27,24 @@ class ControladorPID:
 
     def generar_respuestas(self):
         """Genera las respuestas del sistema con diferentes controladores."""
+        # Parámetros según el modo
+        if modo == "manual":
+            Kp, Ki, Kd = self.Kp, self.Ki, self.Kd
+        elif modo == "genetico" and valores_optimos:
+            Kp, Ki, Kd = valores_optimos
+        else:
+            raise ValueError("Modo no válido o valores óptimos no proporcionados para el modo genético.")
+
         # Definición del sistema abierto
         num = [1]
         den = [self.M * self.l, 0, -(self.M + self.m) * self.g]
         sys_open = ctrl.TransferFunction(num, den)
 
         # Controladores
-        sys_p = self.Kp
-        sys_pi = self.Kp + self.Ki / ctrl.TransferFunction([1], [1, 0])
-        sys_pd = self.Kp + self.Kd * ctrl.TransferFunction([1, 0], [1])
-        sys_pid = self.Kp + self.Ki / ctrl.TransferFunction([1], [1, 0]) + self.Kd * ctrl.TransferFunction([1, 0], [1])
+        sys_p = Kp
+        sys_pi = Kp + Ki / ctrl.TransferFunction([1], [1, 0])
+        sys_pd = Kp + Kd * ctrl.TransferFunction([1, 0], [1])
+        sys_pid = Kp + Ki / ctrl.TransferFunction([1], [1, 0]) + Kd * ctrl.TransferFunction([1, 0], [1])
 
         # Sistemas cerrados
         sys_p_closed = ctrl.feedback(sys_p * sys_open)

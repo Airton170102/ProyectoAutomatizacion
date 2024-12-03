@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from tkinter import Tk, Label, Scale, HORIZONTAL, Frame
 from controlador import ControladorPID
-
+from algoritmo_genetico import GeneticAlgorithm
 
 class InterfazGrafica:
     """Clase que encapsula la interfaz gráfica para visualizar las respuestas del sistema."""
@@ -57,7 +57,7 @@ class InterfazGrafica:
             self.sliders[text] = slider
 
     def actualizar_graficas(self):
-        """Actualiza las gráficas basadas en los valores actuales de los sliders."""
+        """Actualiza las gráficas basadas en los valores actuales de los sliders y el algoritmo genético."""
         # Obtener valores de los sliders
         M = self.sliders["Masa del carro (M)"].get()
         m = self.sliders["Masa del péndulo (m)"].get()
@@ -70,17 +70,38 @@ class InterfazGrafica:
         # Actualizar los parámetros en el controlador
         self.controlador.actualizar_parametros(M, m, l, g, Kp, Ki, Kd)
         
-        # Generar las respuestas del sistema
-        t, respuestas = self.controlador.generar_respuestas()
+        # Generar las respuestas del sistema (manual)
+        t, respuestas_manual = self.controlador.generar_respuestas()
+
+        # Ejecutar el algoritmo genético para encontrar los valores óptimos
+        def objective_function(chromosome):
+            return self.controlador.calcular_itae(*chromosome)
+
+        ga = GeneticAlgorithm(
+            objective_function=objective_function,
+            population_size=30,
+            chromosome_size=3,
+            gene_bounds=(0, 100),
+            mutation_probability=0.3,
+            crossover_probability=0.6,
+            crossover_rate=0.5
+        )
+        valores_optimos = ga.optimizar(generaciones=5)
+        
+        # Generar las respuestas del sistema (genético)
+        t, respuestas_genetico = self.controlador.generar_respuestas(modo="genetico", valores_optimos=valores_optimos)
         
         # Actualizar las gráficas
         titulos = ["P", "PI", "PD", "PID"]
-        for ax, y, title in zip(self.axes, respuestas, titulos):
+        for i, (y_manual, y_genetico, title) in enumerate(zip(respuestas_manual, respuestas_genetico, titulos)):
+            ax = self.axes[i]
             ax.clear()
-            ax.plot(t, y, linewidth=2)
+            ax.plot(t, y_manual, label="Manual", linewidth=2)
+            ax.plot(t, y_genetico, label="Genético", linewidth=2, linestyle="--")
             ax.set_title(f"Controlador {title}")
             ax.set_xlabel("Tiempo [s]")
             ax.set_ylabel("Ángulo del péndulo (θ)")
+            ax.legend()
             ax.grid(True)
         
         self.canvas.draw()

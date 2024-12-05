@@ -4,7 +4,6 @@ from tkinter import Tk, Label, Scale, HORIZONTAL, Frame
 from controlador import ControladorPID
 from algoritmo_genetico import GeneticAlgorithm
 
-
 class InterfazGrafica:
     """Clase que encapsula la interfaz gráfica para visualizar las respuestas del sistema."""
     

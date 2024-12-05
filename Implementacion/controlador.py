@@ -62,7 +62,7 @@ class ControladorPID:
         _, y_pid = ctrl.step_response(sys_pid_closed, t)
 
         return t, [y_p, y_pi, y_pd, y_pid]
-
+      
     def calcular_itae(self, Kp, Ki, Kd):
         """Calcula el criterio ITAE con penalización adicional para errores finales."""
         self.actualizar_parametros(self.M, self.m, self.l, self.g, Kp, Ki, Kd)

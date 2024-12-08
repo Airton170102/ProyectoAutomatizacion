@@ -9,6 +9,7 @@ class InterfazGrafica:
     
     def __init__(self, controlador):
         self.controlador = controlador  # Instancia del controlador PID
+        self.valores_optimos = None  # Valores optimizados inicializados en None
         
         # Crear la ventana principal
         self.ventana = Tk()

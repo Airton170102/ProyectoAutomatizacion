@@ -119,6 +119,8 @@ class InterfazGrafica:
 
     def ejecutar(self):
         """Ejecuta el bucle principal de la interfaz gráfica."""
+        # Optimización en un hilo separado
+        threading.Thread(target=self.optimizar_genetico).start()
         self.ventana.mainloop()
 
 

@@ -57,6 +57,27 @@ class InterfazGrafica:
             slider.pack(fill="x", pady=5)
             self.sliders[text] = slider
 
+    def optimizar_genetico(self):
+        """Ejecuta el algoritmo genético para encontrar los valores óptimos en un hilo separado."""
+        def objective_function(chromosome):
+            return self.controlador.calcular_itae(*chromosome)
+
+        ga = GeneticAlgorithm(
+            objective_function=objective_function,
+            population_size=30,
+            chromosome_size=3,
+            gene_bounds=(0, 100),
+            mutation_probability=0.3,
+            crossover_probability=0.6,
+            crossover_rate=0.5
+        )
+        
+        # Optimización
+        self.valores_optimos = ga.optimizar(generaciones=25)
+
+        # Actualizar las gráficas tras la optimización
+        self.actualizar_graficas()
+
     def actualizar_graficas(self):
         """Actualiza las gráficas basadas en los valores actuales de los sliders y el algoritmo genético."""
         # Obtener valores de los sliders

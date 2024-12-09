@@ -5,11 +5,14 @@ from controlador import ControladorPID
 from algoritmo_genetico import GeneticAlgorithm
 
 
+import threading
+
 class InterfazGrafica:
     """Clase que encapsula la interfaz gráfica para visualizar las respuestas del sistema."""
     
     def __init__(self, controlador):
         self.controlador = controlador  # Instancia del controlador PID
+        self.valores_optimos = None  # Valores optimizados inicializados en None
         
         # Crear la ventana principal
         self.ventana = Tk()
@@ -31,6 +34,10 @@ class InterfazGrafica:
         
         # Crear las barras deslizantes
         self.crear_sliders()
+
+        self.label_valores_optimos = Label(self.frame_sliders, text="Valores óptimos: No optimizado", anchor="w")
+        self.label_valores_optimos.pack(fill="x", pady=10)
+
         
         # Inicializar las gráficas
         self.actualizar_graficas()
@@ -57,6 +64,27 @@ class InterfazGrafica:
             slider.pack(fill="x", pady=5)
             self.sliders[text] = slider
 
+    def optimizar_genetico(self):
+        """Ejecuta el algoritmo genético para encontrar los valores óptimos en un hilo separado."""
+        def objective_function(chromosome):
+            return self.controlador.calcular_itae(*chromosome)
+
+        ga = GeneticAlgorithm(
+            objective_function=objective_function,
+            population_size=30,
+            chromosome_size=3,  # Tres genes: Kp, Ki, Kd
+            gene_bounds=[(0, 100), (0, 10), (0, 50)],  # Límites: [Kp: 10-50, Ki: 0-5, Kd: 0-20]
+            mutation_probability=0.3,
+            crossover_probability=0.6,
+            crossover_rate=0.5
+        )
+        
+        # Optimización
+        self.valores_optimos = ga.optimizar(generaciones=25)
+
+        # Actualizar las gráficas tras la optimización
+        self.actualizar_graficas()
+
     def actualizar_graficas(self):
         """Actualiza las gráficas basadas en los valores actuales de los sliders y el algoritmo genético."""
         # Obtener valores de los sliders
@@ -74,23 +102,18 @@ class InterfazGrafica:
         # Generar las respuestas del sistema (manual)
         t, respuestas_manual = self.controlador.generar_respuestas()
 
-        # Ejecutar el algoritmo genético para encontrar los valores óptimos
-        def objective_function(chromosome):
-            return self.controlador.calcular_itae(*chromosome)
+        if self.valores_optimos:
+            valores_geneticos = f"Kp={self.valores_optimos[0]:.2f}, Ki={self.valores_optimos[1]:.2f}, Kd={self.valores_optimos[2]:.2f}"
+            self.label_valores_optimos.config(text=f"Valores óptimos:\n{valores_geneticos}")
+        else:
+            self.label_valores_optimos.config(text="Valores óptimos: No optimizado")
 
-        ga = GeneticAlgorithm(
-            objective_function=objective_function,
-            population_size=30,
-            chromosome_size=3,
-            gene_bounds=(0, 100),
-            mutation_probability=0.3,
-            crossover_probability=0.6,
-            crossover_rate=0.5
-        )
-        valores_optimos = ga.optimizar(generaciones=5)
-        
-        # Generar las respuestas del sistema (genético)
-        t, respuestas_genetico = self.controlador.generar_respuestas(modo="genetico", valores_optimos=valores_optimos)
+
+        # Generar las respuestas del sistema (genético) si los valores óptimos están disponibles
+        if self.valores_optimos:
+            t, respuestas_genetico = self.controlador.generar_respuestas(modo="genetico", valores_optimos=self.valores_optimos)
+        else:
+            respuestas_genetico = [None] * 4  # Placeholder para las gráficas
         
         # Actualizar las gráficas
         titulos = ["P", "PI", "PD", "PID"]
@@ -98,7 +121,8 @@ class InterfazGrafica:
             ax = self.axes[i]
             ax.clear()
             ax.plot(t, y_manual, label="Manual", linewidth=2)
-            ax.plot(t, y_genetico, label="Genético", linewidth=2, linestyle="--")
+            if y_genetico is not None:
+                ax.plot(t, y_genetico, label="Genético", linewidth=2, linestyle="--")
             ax.set_title(f"Controlador {title}")
             ax.set_xlabel("Tiempo [s]")
             ax.set_ylabel("Ángulo del péndulo (θ)")
@@ -109,7 +133,10 @@ class InterfazGrafica:
 
     def ejecutar(self):
         """Ejecuta el bucle principal de la interfaz gráfica."""
+        # Optimización en un hilo separado
+        threading.Thread(target=self.optimizar_genetico).start()
         self.ventana.mainloop()
+
 
 
 if __name__ == "__main__":

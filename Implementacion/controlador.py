@@ -53,7 +53,7 @@ class ControladorPID:
         sys_pid_closed = ctrl.feedback(sys_pid * sys_open)
 
         # Tiempo de simulación
-        t = np.linspace(0, 10, 1000)
+        t = np.linspace(0, 10, 500)
 
         # Respuestas al escalón
         _, y_p = ctrl.step_response(sys_p_closed, t)

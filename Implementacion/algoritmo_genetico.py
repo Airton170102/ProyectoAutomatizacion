@@ -1,8 +1,8 @@
+from concurrent.futures import ThreadPoolExecutor
 import random
 
-
 class GeneticAlgorithm:
-    """Clase que implementa un algoritmo genético para optimizar parámetros PID."""
+    """Clase que implementa un algoritmo genético optimizado para parámetros PID."""
 
     def __init__(self, objective_function, population_size, chromosome_size, gene_bounds, mutation_probability,
                  crossover_probability, crossover_rate):
@@ -14,19 +14,34 @@ class GeneticAlgorithm:
         self.crossover_probability = crossover_probability
         self.crossover_rate = crossover_rate
         self.population = self.inicializar_poblacion()
+        self.fitness_cache = {}  # Diccionario para memoization
 
     def inicializar_poblacion(self):
-        """Inicializa la población aleatoria dentro del rango permitido."""
-        return [[random.uniform(self.gene_bounds[0], self.gene_bounds[1]) for _ in range(self.chromosome_size)]
-                for _ in range(self.population_size)]
+        """Inicializa la población aleatoria dentro de los rangos específicos para cada gen."""
+        return [
+            [random.uniform(self.gene_bounds[i][0], self.gene_bounds[i][1]) for i in range(self.chromosome_size)]
+            for _ in range(self.population_size)
+        ]
+
 
     def evaluar_fitness(self, individuo):
-        """Evalúa el fitness de un individuo basado en la función objetivo."""
-        return 1 / (self.objfunction(individuo) + 1e-6)
+        """Evalúa el fitness de un individuo con memoization."""
+        key = tuple(individuo)
+        if key in self.fitness_cache:
+            return self.fitness_cache[key]
+        fitness = 1 / (self.objfunction(individuo) + 1e-6)
+        self.fitness_cache[key] = fitness
+        return fitness
+
+    def evaluar_fitness_poblacion(self):
+        """Evalúa el fitness de toda la población en paralelo."""
+        with ThreadPoolExecutor() as executor:
+            fitness_poblacion = list(executor.map(self.evaluar_fitness, self.population))
+        return fitness_poblacion
 
     def seleccionar(self):
         """Selecciona dos individuos usando selección proporcional al fitness."""
-        fitness = [self.evaluar_fitness(ind) for ind in self.population]
+        fitness = self.evaluar_fitness_poblacion()
         total_fitness = sum(fitness)
         probabilidades = [f / total_fitness for f in fitness]
         return random.choices(self.population, weights=probabilidades, k=2)
@@ -41,17 +56,21 @@ class GeneticAlgorithm:
         return padre1, padre2
 
     def mutar(self, individuo):
-        """Muta un individuo con probabilidad dada."""
+        """Muta un individuo respetando los límites específicos para cada gen."""
         for i in range(len(individuo)):
             if random.random() < self.mutation_probability:
-                individuo[i] = random.uniform(self.gene_bounds[0], self.gene_bounds[1])
+                individuo[i] = random.uniform(self.gene_bounds[i][0], self.gene_bounds[i][1])
         return individuo
+
 
     def optimizar(self, generaciones):
         """Optimiza los parámetros PID usando el algoritmo genético."""
+        no_mejora = 0
+        mejor_fitness_anterior = None
+
         for gen in range(generaciones):
             # Evaluar fitness de la población
-            fitness_poblacion = [self.evaluar_fitness(ind) for ind in self.population]
+            fitness_poblacion = self.evaluar_fitness_poblacion()
             mejor_fitness = max(fitness_poblacion)
             mejor_individuo = self.population[fitness_poblacion.index(mejor_fitness)]
 
@@ -59,6 +78,7 @@ class GeneticAlgorithm:
             print(f"Generación {gen + 1}:")
             print(f"  Mejor individuo: {mejor_individuo}")
             print(f"  Mejor fitness: {mejor_fitness:.6f}\n")
+
 
             # Crear nueva población
             nueva_poblacion = []

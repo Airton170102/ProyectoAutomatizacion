@@ -4,7 +4,6 @@ from tkinter import Tk, Label, Scale, HORIZONTAL, Frame
 from controlador import ControladorPID
 from algoritmo_genetico import GeneticAlgorithm
 
-
 import threading
 
 class InterfazGrafica:

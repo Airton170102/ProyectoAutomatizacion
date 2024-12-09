@@ -71,8 +71,13 @@ class InterfazGrafica:
         ga = GeneticAlgorithm(
             objective_function=objective_function,
             population_size=30,
+<<<<<<< HEAD
             chromosome_size=3,  # Tres genes: Kp, Ki, Kd
             gene_bounds=[(0, 100), (0, 10), (0, 50)],  # Límites: [Kp: 10-50, Ki: 0-5, Kd: 0-20]
+=======
+            chromosome_size=3,
+            gene_bounds=(0, 100),
+>>>>>>> main
             mutation_probability=0.3,
             crossover_probability=0.6,
             crossover_rate=0.5
@@ -101,6 +106,7 @@ class InterfazGrafica:
         # Generar las respuestas del sistema (manual)
         t, respuestas_manual = self.controlador.generar_respuestas()
 
+<<<<<<< HEAD
         if self.valores_optimos:
             valores_geneticos = f"Kp={self.valores_optimos[0]:.2f}, Ki={self.valores_optimos[1]:.2f}, Kd={self.valores_optimos[2]:.2f}"
             self.label_valores_optimos.config(text=f"Valores óptimos:\n{valores_geneticos}")
@@ -108,6 +114,8 @@ class InterfazGrafica:
             self.label_valores_optimos.config(text="Valores óptimos: No optimizado")
 
 
+=======
+>>>>>>> main
         # Generar las respuestas del sistema (genético) si los valores óptimos están disponibles
         if self.valores_optimos:
             t, respuestas_genetico = self.controlador.generar_respuestas(modo="genetico", valores_optimos=self.valores_optimos)

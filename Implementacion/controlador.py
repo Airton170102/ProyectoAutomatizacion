@@ -62,6 +62,20 @@ class ControladorPID:
         _, y_pid = ctrl.step_response(sys_pid_closed, t)
 
         return t, [y_p, y_pi, y_pd, y_pid]
+
+    def calcular_error(self, modo="manual", valores_optimos=None):
+        """Calcula el error del sistema comparando referencia con la salida."""
+        # Obtener la respuesta según el modo
+        t, respuestas = self.generar_respuestas(modo, valores_optimos)
+        y_pid = respuestas[3]  # Usar la respuesta del controlador PID
+
+        # Referencia (suponiendo que es 0)
+        referencia = np.zeros_like(t)
+
+        # Calcular error
+        error = referencia - y_pid
+        return t, error
+
       
     def calcular_itae(self, Kp, Ki, Kd):
         """Calcula el criterio ITAE con penalización adicional para errores finales."""
@@ -76,3 +90,5 @@ class ControladorPID:
         error_constante = abs(np.mean(y_pid[-100:]))  # Promedio de los últimos 100 valores
         penalizacion = 100 * error_constante
         return itae + penalizacion
+
+    

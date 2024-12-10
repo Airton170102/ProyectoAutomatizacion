@@ -17,9 +17,12 @@ class GeneticAlgorithm:
         self.fitness_cache = {}  # Diccionario para memoization
 
     def inicializar_poblacion(self):
-        """Inicializa la población aleatoria dentro del rango permitido."""
-        return [[random.uniform(self.gene_bounds[0], self.gene_bounds[1]) for _ in range(self.chromosome_size)]
-                for _ in range(self.population_size)]
+        """Inicializa la población aleatoria dentro de los rangos específicos para cada gen."""
+        return [
+            [random.uniform(self.gene_bounds[i][0], self.gene_bounds[i][1]) for i in range(self.chromosome_size)]
+            for _ in range(self.population_size)
+        ]
+
 
     def evaluar_fitness(self, individuo):
         """Evalúa el fitness de un individuo con memoization."""
@@ -53,11 +56,12 @@ class GeneticAlgorithm:
         return padre1, padre2
 
     def mutar(self, individuo):
-        """Muta un individuo con probabilidad dada."""
+        """Muta un individuo respetando los límites específicos para cada gen."""
         for i in range(len(individuo)):
             if random.random() < self.mutation_probability:
-                individuo[i] = random.uniform(self.gene_bounds[0], self.gene_bounds[1])
+                individuo[i] = random.uniform(self.gene_bounds[i][0], self.gene_bounds[i][1])
         return individuo
+
 
     def optimizar(self, generaciones):
         """Optimiza los parámetros PID usando el algoritmo genético."""
